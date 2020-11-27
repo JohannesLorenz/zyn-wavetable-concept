@@ -1,4 +1,6 @@
-# Advantages/Disadvantages of the tensor implementation
+# Advantages/disadvantages of the wavetable implementation
+
+This discusses the advantages/disadvantages of using non-RT generated wavetables in ADnote, rather than computing them live in noteOn. While this is a pre-step before implementing wavetable modulation, this page is not (much) about wavetable modulation, but rather trys to answer if the changes to the current ADnote code to use wavetables are justified. 
 
 The advantages/disadvantages with same numbers belong together.
 
@@ -15,7 +17,7 @@ The advantages/disadvantages with same numbers belong together.
 
 1. Lower computation times in RT thread:
   1. If no random (default settings), waves can be re-used
-2. The tensor implementation makes it easier to implement wavetable modulation (e.g. by modulating the basewave parameter)
+2. The wavetable implementation makes it easier to implement wavetable modulation (e.g. by modulating the basewave parameter)
   1. OscilGen code can be non RT
 3. -
 4. -
