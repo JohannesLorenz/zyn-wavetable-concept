@@ -64,7 +64,8 @@ entry points, marked with an "X".
     |                                                           |
     |<-----request-wavetable:sTiibbi:sFiibbi--------------------|
     |      Inform MW that new waves can be generated            | 
-    |      - path of ADvoice (sT/sF)                            |
+    |      - path of OscilGen (s is voice path, T/F is          |
+    |        OscilGen path)                                     |
     |      - wavetable ringbuffer                               |
     |        write position + space (ii)                        |
     |        (write position = semantic index)                  |
