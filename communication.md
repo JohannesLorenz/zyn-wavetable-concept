@@ -88,6 +88,9 @@ entry points, marked with an "X".
     |                            passed Tensor2 with the        |
     |                            Tensor1s that have been        |
     |                            consumed previously            |
+    |                          - increase ringbuffer write pos  |
+    |                            by 1 (since waves for one      |
+    |                            semantic have been inserted)   |
     |                                                           |
     |<-----free:sb----------------------------------------------|
     |      recycle the Tensor2 which includes the now           |
