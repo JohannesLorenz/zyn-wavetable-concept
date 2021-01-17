@@ -21,8 +21,20 @@ A wavetable has the following contents:
   ^                                               | "waves"
   |                                               |
   o...ooo 3D Tensor (Tensor2s for each semantic)  |
-          with ringbuffer semantics               |
+          with ringbuffer semantics (see below)   |
           (MW produces, AD note consumes)        --
+```
+
+Ringbuffer layout:
+
+```
+  required space holder (to make r=w unambiguous)                      wrap
+        ||                                                               |
+        vv               |--reserved for write--|                        v
+  ...---||--can be read--|                      |--can be reserved next...
+  ...oooooooo............oooo...................oooo......................
+         |               |                      |
+         r               w_delayed              w              <- pointers
 ```
 
 ## Sequence diagram
@@ -62,9 +74,12 @@ entry points, marked with an "X".
     |                            wavetables (ringbuffer read    |
     |                            space)                    X--->|
     |                                                           |
-    |<-----request-wavetable:sTiibbi:sFiibbi--------------------|
+    |                          - increase ringbuffer's reserved |
+    |                            write space (by increading `w`)|
+    |                                                           |
+    |<--request-wavetable:sTiibbi:sFiibbi:iiiTiibbi:iiiFiibbi---|
     |      Inform MW that new waves can be generated            | 
-    |      - path of OscilGen (s is voice path, T/F is          |
+    |      - path of OscilGen (s or iii is voice path, T/F is   |
     |        OscilGen path)                                     |
     |      - wavetable ringbuffer                               |
     |        write position + space (ii)                        |
@@ -89,9 +104,11 @@ entry points, marked with an "X".
     |                            passed Tensor2 with the        |
     |                            Tensor1s that have been        |
     |                            consumed previously            |
-    |                          - increase ringbuffer write pos  |
-    |                            by 1 (since waves for one      |
-    |                            semantic have been inserted)   |
+    |                          - increase ringbuffer's write    |
+    |                            pointer `w_delayed` by 1       |
+    |                            (since reserved waves for one  |
+    |                            semantic have now been         |
+    |                            inserted)                      |  
     |                                                           |
     |<-----free:sb----------------------------------------------|
     |      recycle the Tensor2 which includes the now           |
