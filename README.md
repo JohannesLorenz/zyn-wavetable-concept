@@ -70,7 +70,9 @@ This is just replacing the current code, i.e. no new feature like "basewave modu
     4. If currently no random is used in the ADnoteParameters, the table is just one element (optimization for later, let's keep it simple).
     5. Note, this process will be something that can be optimized considerably
        in that it should be possible to avoid redundant calculations in get()
-       due to different antialiasing cutoffs (for most settings)
+       due to different antialiasing cutoffs (for most settings). `OscilGen::get`
+       first does some initial math, then anti-aliasing. The initial math could be
+       the same for different random seeds.
 3. ADnote::setupVoice now does not call OscilGen::get anymore outside of unit tests (The previous behavior should be maintained for unit tests to ease identifying regressions over a large range of versions). Instead, it gets the samples by using the wavetable to obtain the next random seed from the wave table from ADnoteVoiceParam.
     1. "Fetching" that table must be realtime safe. This means at the time of ADnote::setupVoice, `MiddleWare` has already sent some waves to the RT thread. This should be done by sending either full or partial wavetables (as full wavetable calculation may be sufficiently cheap) via the bToU buffer (that way, `MiddleWare` can generate waves "online" while ADnote already takes the first waves).
     2. While the table index for `wavetable_t::buffers_for_all_notes` is already calculated, the wave from the table is not yet referenced yet (in order to be conforming to 7.1) - minor detail.
