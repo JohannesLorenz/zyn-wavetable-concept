@@ -46,17 +46,16 @@ entry points, marked with an "X".
 ```
     MW (non-RT)                                                 ADnote (RT)
     |                                                           |
-    |   wavetable-relevant data changed                         |
+    |   wavetable-relevant params changed                       |
     |<---X                                                      |
     |                                                           |
-    - calculate new scale 1D tensors                            |
-      (if required)                                             |
-    |                                                           |
+    |  If "wavetable-params-changed" is not suppressed:         |
     |--/path/to/ad/voice/wavetable-params-changed:T:F:Tbb:Fbb-->|
     |      Inform ADnote that data relevant for wavetable       |
     |      creation has changed                                 |
     |      - path: osc or mod-osc? (T/F)                        |
-    |      - optional 1D scale Tensors (bb)                     |
+    |      - if changed params affect scales:                   |
+    |        calculate and send 1D scale Tensors (bb)           |
     |                                                           |
     - suppress further "wavetable-params-changed"               |
     |                                                           |
