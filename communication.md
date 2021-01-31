@@ -50,11 +50,12 @@ entry points, marked with an "X".
     |<---X                                                      |
     |                                                           |
     |  If "wavetable-params-changed" is not suppressed:         |
-    |--/path/to/ad/voice/wavetable-params-changed:T:F:Tbb:Fbb-->|
+    |--/path/to/advoice/wavetable-params-changed:T:F:Tibb:Fibb->|
     |      Inform ADnote that data relevant for wavetable       |
     |      creation has changed                                 |
     |      - path: osc or mod-osc? (T/F)                        |
     |      - if changed params affect scales:                   |
+    |        unique timestamp of parameter change (i)           |
     |        calculate and send 1D scale Tensors (bb)           |
     |                                                           |
     - suppress further "wavetable-params-changed"               |
@@ -76,10 +77,16 @@ entry points, marked with an "X".
     |                          - increase ringbuffer's reserved |
     |                            write space (by increading `w`)|
     |                                                           |
-    |<--request-wavetable:sTiibbi:sFiibbi:iiiTiibbi:iiiFiibbi---|
+    |<request-wavetable:sTiiibbi:sFiiibbi:iiiTiiibbi:iiiFiiibbi-|
     |      Inform MW that new waves can be generated            | 
     |      - path of OscilGen (s or iii is voice path, T/F is   |
     |        OscilGen path)                                     |
+    |      - if 1D scale Tensors were passed:                   |
+    |          parameter change timestamp                       |
+    |        else                                               |
+    |          0 (parameter change timestamp is implicitly the  |
+    |             one of the latest parameter change which      |
+    |             ADnote observed)                              |
     |      - wavetable ringbuffer                               |
     |        write position + space (ii)                        |
     |        (write position = semantic index)                  |
@@ -93,6 +100,8 @@ entry points, marked with an "X".
     - handle wavetable requests in next cycle                   |
       to generate waves                                         |
     |                                                           |
+    |      If MW has not observed any parameter change after    |
+    |      the parameter change time of this request:           |
     |------/path/to/ad/voice/set-waves:Tib:Fib----------------->|
     |      pass new waves to ADnote                             |
     |      - path: osc or mod-osc? (T/F)                        |
