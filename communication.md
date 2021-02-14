@@ -5,7 +5,7 @@ wavetable need to be generated.
 
 ## Wavetable layout
 
-A wavetable has the following contents:
+A Tensor3 (3D-Tensor) has the following contents:
 
 ```
   ooooooo 1D-Tensor (frequeny values in Hz)      --
@@ -37,6 +37,30 @@ Ringbuffer layout:
          r               w_delayed              w              <- pointers
 ```
 
+Wavetable layout:
+
+```
+ o "current" ringbuffer (Tensor3)
+ o "next" ringbuffer (Tensor3, to be filled by parameter change)
+ o timestamp of params for current ringbuffer
+ o timestamp of params for next ("to be filled") ringbuffer
+ 
+ o scales for requested (and most of the time for current) ringbuffer
+ 
+ o wavetable mode (e.g. random seeds, basefunc parameter, ...)
+```
+
+## Asynchonicity principles
+
+MiddleWare and ADnoteParams are run by 2 different threads at the same
+time. This can cause issues, like outdated requests. To avoid this, the
+following principles have been set up:
+
+* wavetable requests induced by parameter changes always carry a timestamp
+* any side should not rely on the other side handling the asynchonicity
+  "well", i.e. it can not be relied on the other side detectig messages
+  with outdated timestamps
+
 ## Sequence diagram
 
 The following (not necessarily UML standard) diagram explains
@@ -50,19 +74,21 @@ entry points, marked with an "X".
     |<---X                                                      |
     |                                                           |
     |  If "wavetable-params-changed" is not suppressed:         |
-    |--/path/to/advoice/wavetable-params-changed:T:F:Tibb:Fibb->|
+    |--/path/to/advoice/wavetable-params-changed--------------->|
+    |  :Ti:Fi:Tibb:Fibb                                         |
     |      Inform ADnote that data relevant for wavetable       |
     |      creation has changed                                 |
     |      - path: osc or mod-osc? (T/F)                        |
+    |      - unique timestamp of parameter change (i)           |
     |      - if changed params affect scales:                   |
-    |        unique timestamp of parameter change (i)           |
     |        calculate and send 1D scale Tensors (bb)           |
     |                                                           |
     - suppress further "wavetable-params-changed"               |
     |                                                           |
     |                          - swap scales if transmitted     |
-    |                          - resize wavetable if scales     |
-    |                            have been transmitted          |
+    |                          - mark current ringbuffer        |
+    |                            "outdated until                |
+    |                            waves for timestamp arrive"    |
     |<-----free:sb----------------------------------------------|
     |      Free old frequencies                                 |
     |<-----free:sb----------------------------------------------|
@@ -77,11 +103,13 @@ entry points, marked with an "X".
     |                          - increase ringbuffer's reserved |
     |                            write space (by increading `w`)|
     |                                                           |
+    | If the wavetable request comes from a parameter change,   |
+    | or the current wavetable is not outdated                  |
     |<request-wavetable:sTiiibbi:sFiiibbi:iiiTiiibbi:iiiFiiibbi-|
     |      Inform MW that new waves can be generated            | 
     |      - path of OscilGen (s or iii is voice path, T/F is   |
     |        OscilGen path)                                     |
-    |      - if 1D scale Tensors were passed:                   |
+    |      - In case of parameter change:                       |
     |          parameter change timestamp                       |
     |        else                                               |
     |          0 (parameter change timestamp is implicitly the  |
@@ -109,8 +137,7 @@ entry points, marked with an "X".
     |      - 3D Tensor for given semantic (b)                   |
     |                                                           |
     |                          - swap passed Tensor3 with the   |
-    |                            one that has been used         |
-    |                            previously                     |
+    |                            wavetable's "next" buffer      |
     |                                                           |
     |<-----free:sb----------------------------------------------|
     |      recycle the Tensor3 which includes the now           |
@@ -120,22 +147,33 @@ entry points, marked with an "X".
       contained sub-Tensors)                                    |
     |                                                           |
     |      If MW has not observed any parameter change after    |
-    |      the parameter change time of this request:           |         |
-    |------/path/to/ad/voice/set-waves:Tib:Fib----------------->|
+    |      the parameter change time of this request:           |
+    |------/path/to/ad/voice/set-waves:Tiib:Fiib--------------->|
     |      pass new waves to ADnote                             |
     |      - path: osc or mod-osc? (T/F)                        |
+    |      - timestamp of inducing parameter change (0 if none) |
     |      - write position (=semantic index) (i)               |
     |      - 2D Tensor for given semantic (b)                   |
     |                                                           |
+    |                If the wave does not come from an outdated |
+    |                parameter change (OK if from up-to-date    |
+    |                parameter change or not from parameter     |
+    |                change at all):                            |
     |                          - swap all Tensor1s from the     |
     |                            passed Tensor2 with the        |
-    |                            Tensor1s that have been        |
-    |                            consumed previously            |
-    |                          - increase ringbuffer's write    |
-    |                            pointer `w_delayed` by 1       |
+    |                            Tensor1s from the "next"       |
+    |                            ringbuffer (parameter change)  |
+    |                            or with the previously         |
+    |                            consumed Tensor1s              |
+    |                          - increase respective ringbuffer |
+    |                            write pointer `w_delayed` by 1 |
     |                            (since reserved waves for one  |
     |                            semantic have now been         |
-    |                            inserted)                      |  
+    |                            inserted)                      | 
+    |                          - in case of parameter change,   |
+    |                            if the last semantic has       |
+    |                            arrived: swap WT's "next" and  |
+    |                            "current" ringbuffers          |
     |                                                           |
     |<-----free:sb----------------------------------------------|
     |      recycle the Tensor2 which includes the now           |
