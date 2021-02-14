@@ -101,7 +101,26 @@ entry points, marked with an "X".
       to generate waves                                         |
     |                                                           |
     |      If MW has not observed any parameter change after    |
-    |      the parameter change time of this request:           |
+    |      the parameter change time of this request, and the   |
+    |      scale sizes have changed:                            |
+    |------/path/to/ad/voice/set-tensor3:Tb:Fb----------------->|
+    |      pass new container to ADnoteParams                   |
+    |      - path: osc or mod-osc? (T/F)                        |
+    |      - 3D Tensor for given semantic (b)                   |
+    |                                                           |
+    |                          - swap passed Tensor3 with the   |
+    |                            one that has been used         |
+    |                            previously                     |
+    |                                                           |
+    |<-----free:sb----------------------------------------------|
+    |      recycle the Tensor3 which includes the now           |
+    |      unused (because of swap) sub-Tensors                 |
+    |                                                           |
+    - free the Tensor3 (includes freeing                        |
+      contained sub-Tensors)                                    |
+    |                                                           |
+    |      If MW has not observed any parameter change after    |
+    |      the parameter change time of this request:           |         |
     |------/path/to/ad/voice/set-waves:Tib:Fib----------------->|
     |      pass new waves to ADnote                             |
     |      - path: osc or mod-osc? (T/F)                        |
