@@ -85,14 +85,16 @@ entry points, marked with an "X".
     |                                                           |
     - suppress further "wavetable-params-changed"               |
     |                                                           |
-    |                          - swap scales if transmitted     |
+    |                          - if transmitted, store scales   |
+    |                            as "next scales" (but do not   |
+    |                            use them yet)                  |
     |                          - mark current ringbuffer        |
     |                            "outdated until                |
     |                            waves for timestamp arrive"    |
     |<-----free:sb----------------------------------------------|
-    |      Free old frequencies                                 |
+    |      Free old "next" frequencies                          |
     |<-----free:sb----------------------------------------------|
-    |      Free old semantics                                   |
+    |      Free old "next" semantics                            |
     |                                                           |
     - free them                                                 |
     |                            Master periodically checks if  |
@@ -173,7 +175,7 @@ entry points, marked with an "X".
     |                          - in case of parameter change,   |
     |                            if the last semantic has       |
     |                            arrived: swap WT's "next" and  |
-    |                            "current" ringbuffers          |
+    |                            "current" scales+ringbuffers   |
     |                                                           |
     |<-----free:sb----------------------------------------------|
     |      recycle the Tensor2 which includes the now           |
