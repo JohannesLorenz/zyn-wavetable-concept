@@ -28,10 +28,10 @@ A Tensor3 (3D-Tensor) has the following contents:
 Ringbuffer layout:
 
 ```
-  required space holder (to make r=w unambiguous)                      wrap
-        ||                                                               |
-        vv               |--reserved for write--|                        v
-  ...---||--can be read--|                      |--can be reserved next...
+  no required space holder (r=w is unambiguous internally)             wrap
+         |                                                               |
+         v               |--reserved for write--|                        v
+  ...----|--can be read--|                      |--can be reserved next...
   ...oooooooo............oooo...................oooo......................
          |               |                      |
          r               w_delayed              w              <- pointers
