@@ -74,29 +74,18 @@ entry points, marked with an "X".
     |<---X                                                      |
     |                                                           |
     |  If "wavetable-params-changed" is not suppressed:         |
-    |--/path/to/advoice/wavetable-params-changed--------------->|
-    |  :Ti:Fi:Tibb:Fibb                                         |
+    |--/path/to/advoice/wavetable-params-changed:Ti:Fi--------->|
     |      Inform ADnote that data relevant for wavetable       |
     |      creation has changed                                 |
     |      - path: osc or mod-osc? (T/F)                        |
     |      - unique timestamp of parameter change (i)           |
-    |      - if changed params affect scales:                   |
-    |        calculate and send 1D scale Tensors (bb)           |
     |                                                           |
     - suppress further "wavetable-params-changed"               |
     |                                                           |
-    |                          - if transmitted, store scales   |
-    |                            as "next scales" (but do not   |
-    |                            use them yet)                  |
     |                          - mark current ringbuffer        |
     |                            "outdated until                |
     |                            waves for timestamp arrive"    |
-    |<-----free:sb----------------------------------------------|
-    |      Free old "next" frequencies                          |
-    |<-----free:sb----------------------------------------------|
-    |      Free old "next" semantics                            |
     |                                                           |
-    - free them                                                 |
     |                            Master periodically checks if  |
     |                            ADnote still has enough        |
     |                            wavetables (ringbuffer read    |
@@ -107,7 +96,7 @@ entry points, marked with an "X".
     |                                                           |
     | If the wavetable request comes from a parameter change,   |
     | or the current wavetable is not outdated                  |
-    |<request-wavetable:sTiiibbi:sFiiibbi:iiiTiiibbi:iiiFiiibbi-|
+    |<request-wavetable:sTiiii:sFiiii:iiiTiiibbi:iiiFiiibbi-----|
     |      Inform MW that new waves can be generated            | 
     |      - path of OscilGen (s or iii is voice path, T/F is   |
     |        OscilGen path)                                     |
@@ -117,35 +106,36 @@ entry points, marked with an "X".
     |          0 (parameter change timestamp is implicitly the  |
     |             one of the latest parameter change which      |
     |             ADnote observed)                              |
-    |      - wavetable ringbuffer                               |
-    |        write position + space (ii)                        |
-    |        (write position = semantic index)                  |
-    |        (space = how many new Tensor2's are needed)        |
-    |      - 1D scale tensor ptrs                               |
+    |      - in case of non-parameter change:                   |
+    |          wavetable ringbuffer                             |
+    |          write position + space (ii)                      |
+    |          (write position = semantic index)                |
+    |          (space = how many new Tensor2's are needed)      |
+    |        otherwise: 00 (ii)                                 |
+    |      - optional 1D scale tensor ptrs                      |
     |        (semantics, freqs) (bb)                            |
     |      - Presonance boolean (i)                             |
     |                                                           |
     - stop suppressing further "wavetable-params-changed"       |
     - store wavetable request in queue                          |
     - handle wavetable requests in next cycle                   |
-      to generate waves                                         |
+      to generate waves (and scales, if not passed)             |
     |                                                           |
     |      If MW has not observed any parameter change after    |
-    |      the parameter change time of this request, and the   |
-    |      scale sizes have changed:                            |
-    |------/path/to/ad/voice/set-tensor3:Tb:Fb----------------->|
-    |      pass new container to ADnoteParams                   |
+    |      the parameter change time of this request,           |
+    |      and this request comes from parameter change         |
+    |------/path/to/ad/voice/set-wavetable:Tb:Fb--------------->|
+    |      pass new WaveTable struct to ADnoteParams            |
     |      - path: osc or mod-osc? (T/F)                        |
-    |      - 3D Tensor for given semantic (b)                   |
+    |      - WaveTable for given semantic (b)                   |
     |                                                           |
-    |                          - swap passed Tensor3 with the   |
-    |                            wavetable's "next" buffer      |
+    |                          - swap passed with next          |
+    |                            WaveTable                      |
     |                                                           |
     |<-----free:sb----------------------------------------------|
-    |      recycle the Tensor3 which includes the now           |
-    |      unused (because of swap) sub-Tensors                 |
+    |      recycle the WaveTable                                |
     |                                                           |
-    - free the Tensor3 (includes freeing                        |
+    - free the WaveTable (includes freeing all                  |
       contained sub-Tensors)                                    |
     |                                                           |
     |      If MW has not observed any parameter change after    |
@@ -174,8 +164,8 @@ entry points, marked with an "X".
     |                            inserted)                      | 
     |                          - in case of parameter change,   |
     |                            if the last semantic has       |
-    |                            arrived: swap WT's "next" and  |
-    |                            "current" scales+ringbuffers   |
+    |                            arrived: swap next and current |
+    |                            WaveTable                      |
     |                                                           |
     |<-----free:sb----------------------------------------------|
     |      recycle the Tensor2 which includes the now           |
