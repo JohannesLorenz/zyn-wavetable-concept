@@ -96,7 +96,7 @@ entry points, marked with an "X".
     |                                                           |
     | If the wavetable request comes from a parameter change,   |
     | or the current wavetable is not outdated                  |
-    |<request-wavetable:sTiiii:sFiiii:iiiTiiibbi:iiiFiiibbi-----|
+    |<request-wavetable:sTiiii:sFiiii:iiiTiiii:iiiFiiii---------|
     |      Inform MW that new waves can be generated            | 
     |      - path of OscilGen (s or iii is voice path, T/F is   |
     |        OscilGen path)                                     |
@@ -106,20 +106,22 @@ entry points, marked with an "X".
     |          0 (parameter change timestamp is implicitly the  |
     |             one of the latest parameter change which      |
     |             ADnote observed)                              |
-    |      - in case of non-parameter change:                   |
+    |      - in case of no parameter change:                    |
     |          wavetable ringbuffer                             |
     |          write position + space (ii)                      |
     |          (write position = semantic index)                |
     |          (space = how many new Tensor2's are needed)      |
     |        otherwise: 00 (ii)                                 |
-    |      - optional 1D scale tensor ptrs                      |
-    |        (semantics, freqs) (bb)                            |
     |      - Presonance boolean (i)                             |
+    |      - if triggered by waves consumed:                    |
+    |        quadrupel (semantic + freq indices,                |
+    |        semantic + freq values, iiif or iiff each)         |
+    |        for the waves that need to be regenerated          |
     |                                                           |
     - stop suppressing further "wavetable-params-changed"       |
     - store wavetable request in queue                          |
     - handle wavetable requests in next cycle                   |
-      to generate waves (and scales, if not passed)             |
+      to generate waves (and scales, if parameters changed)     |
     |                                                           |
     |      If MW has not observed any parameter change after    |
     |      the parameter change time of this request,           |
@@ -140,23 +142,28 @@ entry points, marked with an "X".
     |                                                           |
     |      If MW has not observed any parameter change after    |
     |      the parameter change time of this request:           |
-    |------/path/to/ad/voice/set-waves:Tiib:Fiib--------------->|
+    |------/path/to/ad/voice/set-waves:Tiib:Fiib:Tiiib:Fiiib--->|
     |      pass new waves to ADnote                             |
     |      - path: osc or mod-osc? (T/F)                        |
     |      - timestamp of inducing parameter change (0 if none) |
     |      - write position (=semantic index) (i)               |
-    |      - 2D Tensor for given semantic (b)                   |
+    |      - optional: frequency index (i)                      |
+    |      - 2D/1D Tensor for given semantic/semantic+freq (b)  |
     |                                                           |
     |                If the wave does not come from an outdated |
     |                parameter change (OK if from up-to-date    |
     |                parameter change or not from parameter     |
     |                change at all):                            |
-    |                          - swap all Tensor1s from the     |
+    |                          - if Tensor2s are passed:        |
+    |                            swap all Tensor1s from the     |
     |                            passed Tensor2 with the        |
     |                            Tensor1s from the "next"       |
     |                            ringbuffer (parameter change)  |
-    |                            or with the previously         |
-    |                            consumed Tensor1s              |
+    |                          - if Tensor1s are passed:        |
+    |                            swap the Tensor1 with the      |
+    |                            Tensor1 at given frequency     |
+    |                            from the "current" ringbuffer  |
+    |                            (no parameter change)          |
     |                          - increase respective ringbuffer |
     |                            write pointer `w_delayed` by 1 |
     |                            (since reserved waves for one  |
@@ -168,9 +175,10 @@ entry points, marked with an "X".
     |                            WaveTable                      |
     |                                                           |
     |<-----free:sb----------------------------------------------|
+    |      recycle the Tensor1 which is now unused, OR          |
     |      recycle the Tensor2 which includes the now           |
     |      unused (because of swap) Tensor1s                    |
     |                                                           |
-    - free the Tensor2 (includes freeing                        |
-      contained Tensor1s)                                       |
+    - free the Tensor1/2 (includes freeing any                  |
+      contained sub-Tensors)                                    |
 ```
