@@ -40,15 +40,19 @@ Ringbuffer layout:
 Wavetable layout:
 
 ```
- o "current" ringbuffer (Tensor3)
- o "next" ringbuffer (Tensor3, to be filled by parameter change)
+ o scales for ringbuffer (Tensor1, semantics + freqs)
+ o ringbuffer (Tensor3, wave data)
+
  o timestamp of params for current ringbuffer
  o timestamp of params for next ("to be filled") ringbuffer
- 
- o scales for requested (and most of the time for current) ringbuffer
- 
+
  o wavetable mode (e.g. random seeds, basefunc parameter, ...)
 ```
+
+ADnote contains two wavetables per OscilGen:
+
+- current wavetable (in used, can be refilled with new waves)
+- next wavetable (under construction after parameter change)
 
 ## Asynchonicity principles
 
