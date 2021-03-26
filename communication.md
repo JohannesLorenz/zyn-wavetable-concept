@@ -18,11 +18,11 @@ A Tensor3 (3D-Tensor) has the following contents:
   ^                                               |
   |                                               | "wavetable data"
   o...ooo 2D Tensor (Tensor1s for each freq)      | or just
-  ^                                               | "waves"
+  ^       with ringbuffer semantics (see below)   | "waves"
+  |       (MW produces, AD note consumes)         |
   |                                               |
-  o...ooo 3D Tensor (Tensor2s for each semantic)  |
-          with ringbuffer semantics (see below)   |
-          (MW produces, AD note consumes)        --
+  o...ooo 3D Tensor (Tensor2s for each semantic) --
+
 ```
 
 Ringbuffer layout:
@@ -100,7 +100,7 @@ entry points, marked with an "X".
     |                                                           |
     | If the wavetable request comes from a parameter change,   |
     | or the current wavetable is not outdated                  |
-    |<request-wavetable:sTiiii:sFiiii:iiiTiiii:iiiFiiii---------|
+    |<request-wavetable:sTii:sFii:iiiTii:iiiFii-----------------|
     |      Inform MW that new waves can be generated            | 
     |      - path of OscilGen (s or iii is voice path, T/F is   |
     |        OscilGen path)                                     |
@@ -110,12 +110,6 @@ entry points, marked with an "X".
     |          0 (parameter change timestamp is implicitly the  |
     |             one of the latest parameter change which      |
     |             ADnote observed)                              |
-    |      - in case of no parameter change:                    |
-    |          wavetable ringbuffer                             |
-    |          write position + space (ii)                      |
-    |          (write position = semantic index)                |
-    |          (space = how many new Tensor2's are needed)      |
-    |        otherwise: 00 (ii)                                 |
     |      - Presonance boolean (i)                             |
     |      - if triggered by waves consumed:                    |
     |        quadrupel (semantic + freq indices,                |
@@ -147,12 +141,12 @@ entry points, marked with an "X".
     |      If MW has not observed any parameter change after    |
     |      the parameter change time of this request:           |
     |------/path/to/ad/voice/set-waves:Tiib:Fiib:Tiiib:Fiiib--->|
-    |      pass new waves to ADnote                             |
+    |      pass new wave(s) to ADnote                           |
     |      - path: osc or mod-osc? (T/F)                        |
     |      - timestamp of inducing parameter change (0 if none) |
-    |      - write position (=semantic index) (i)               |
-    |      - optional: frequency index (i)                      |
-    |      - 2D/1D Tensor for given semantic/semantic+freq (b)  |
+    |      - frequency index (i)                                |
+    |      - optional: semantic index (= write position) (i)    |
+    |      - 2D/1D Tensor for given freq/semantic+freq (b)      |
     |                                                           |
     |                If the wave does not come from an outdated |
     |                parameter change (OK if from up-to-date    |
@@ -169,12 +163,10 @@ entry points, marked with an "X".
     |                            from the "current" ringbuffer  |
     |                            (no parameter change)          |
     |                          - increase respective ringbuffer |
-    |                            write pointer `w_delayed` by 1 |
-    |                            (since reserved waves for one  |
-    |                            semantic have now been         |
-    |                            inserted)                      | 
+    |                            write pointer `w_delayed` by   |
+    |                            number of semantics inserted   |
     |                          - in case of parameter change,   |
-    |                            if the last semantic has       |
+    |                            if the last freq has           |
     |                            arrived: swap next and current |
     |                            WaveTable                      |
     |                                                           |
