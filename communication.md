@@ -156,16 +156,15 @@ entry points, marked with an "X".
     |                            swap all Tensor1s from the     |
     |                            passed Tensor2 with the        |
     |                            Tensor1s from the "next"       |
-    |                            ringbuffer (parameter change)  |
+    |                            ringbuffer                     |
     |                          - if Tensor1s are passed:        |
     |                            swap the Tensor1 with the      |
     |                            Tensor1 at given frequency     |
     |                            from the "current" ringbuffer  |
-    |                            (no parameter change)          |
     |                          - increase respective ringbuffer |
     |                            write pointer `w_delayed` by   |
     |                            number of semantics inserted   |
-    |                          - in case of parameter change,   |
+    |                          - if Tensor2s were passed,       |
     |                            if the last freq has           |
     |                            arrived: swap next and current |
     |                            WaveTable                      |
