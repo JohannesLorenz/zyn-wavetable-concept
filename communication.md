@@ -93,7 +93,9 @@ entry points, marked with an "X".
     |                            Master periodically checks if  |
     |                            ADnote still has enough        |
     |                            wavetables (ringbuffer read    |
-    |                            space)                    X--->|
+    |                            space) or if waves require a   |
+    |                            complete update (due to paste  |
+    |                            or loading)               X--->|
     |                                                           |
     |                          - increase ringbuffer's reserved |
     |                            write space (by increading `w`)|
