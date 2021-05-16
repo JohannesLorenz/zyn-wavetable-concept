@@ -102,10 +102,12 @@ entry points, marked with an "X".
     |                                                           |
     | If the wavetable request comes from a parameter change,   |
     | or the current wavetable is not outdated                  |
-    |<request-wavetable:sTii:sFii:iiiTii:iiiFii-----------------|
+    |<---request-wavetable                                      |
+    |    :sTFii:iiiTFii:sFTii:sFFii:iiiFTii:iiiFFii-------------|
     |      Inform MW that new waves can be generated            | 
     |      - path of OscilGen (s or iii is voice path, T/F is   |
     |        OscilGen path)                                     |
+    |      - Wavetable modulation boolean (T/F)                 |
     |      - In case of parameter change:                       |
     |          parameter change timestamp                       |
     |        else                                               |
