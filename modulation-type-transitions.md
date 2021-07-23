@@ -1,5 +1,7 @@
 # Problems
 
+Problems with changing the modulation type (between WT and any non-WT) while a note is running:
+
 * Disabling WT/non-WT modulation on a running note which was started with WT/non-WT modulation
   - requires to recompute the new table (possibly with the random seeds/with the wavetable)
   - requires to somehow keep the old table still in memory (complicated reference counts?)
@@ -7,6 +9,12 @@
 * Enabling/Disabling WT modulation on a running note can lead to jumps/clips (Like with every other modulation, but for other modulations, we must stay backward compatible: Changing between them shall change how the ADnote is being played)
 
 => We try to solve all this by disabling transitions (between WT and non-WT) and let them lead to a quick fade out instead.
+
+Problems with changing the modulation type "while" the note is started:
+
+* At the time the note is started, it's possible that the UI already requested to change the modulation type, but the table has not been generated yet. This means the modulation type requests a modulation for which no table exists yet.
+
+=> Such notes are still being played with the old modulation type. This means the old table must resist in ADnoteParameters until the new one is "atomically" added. These notes will be faded with the upcoming table transition (see above).
 
 # Additions to ADnote
 
