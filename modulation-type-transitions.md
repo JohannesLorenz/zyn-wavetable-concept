@@ -1,9 +1,9 @@
 # Problems
 
-* Disabling WT modulation on a running note which was started with WT modulation
-  - requires to recompute OscilGen::get
-  - requires to somehow keep the table still in memory (complicated reference counts?)
-* Enablind WT modulation on a running note requires the note to still wait for MW to generate the note (=> complicated code)
+* Disabling WT/non-WT modulation on a running note which was started with WT/non-WT modulation
+  - requires to recompute the new table (possibly with the random seeds/with the wavetable)
+  - requires to somehow keep the old table still in memory (complicated reference counts?)
+* Enabling WT/non-WT modulation on a running note requires the note to still wait for MW to generate the note (=> complicated code)
 * Enabling/Disabling WT modulation on a running note can lead to jumps/clips (Like with every other modulation, but for other modulations, we must stay backward compatible: Changing between them shall change how the ADnote is being played)
 
 => We try to solve all this by disabling transitions (between WT and non-WT) and let them lead to a quick fade out instead.
@@ -11,7 +11,7 @@
 # Additions to ADnote
 
 * A bool if the initial modulation type was WT or not
-* Two backup buffers for the currently used wavetable buffers (explained later)
+* Two backup buffers for the currently used random-seed/wavetable buffers (explained later)
 * The backup LERP coefficient for the currently used WT modulation (explained later)
 
 # The effective modulation type
@@ -25,11 +25,11 @@
 
 * If current and initial modulation differ by WT-ness (i.e. one is WT, the other is not WT):
   - Initiate a fade out (256 samples at 48 kHz), and
-    * If the current modulation is WT (i.e. the initial is not WT), don't do anything: simply keep using the buffer from OscilGen::get (from the CTOR).
+    * If the current modulation is WT (i.e. the initial is not WT), backup the currently used buffer (possibly for the current random seed)
     * Else, if the current modulation is not WT (i.e. the initial is WT), backup the currently used two buffers and the LERP factor
 
 # If fadeout is active
 
 * If the initial modulation is WT, keep playing the backup buffers with the backup LERP coefficient (since the table might be gone already)
-* Otherwise, just a normal fadeout
+* Otherwise, keep playing the current backup buffer
 
